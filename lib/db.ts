@@ -1,29 +1,24 @@
 import { PrismaClient } from "@prisma/client";
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
-
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({
-  log: ['error'],
-  // Add connection pooling
+// Initialize Prisma Client
+const prisma = new PrismaClient({
+  log: ['query', 'error', 'warn'],
   datasources: {
     db: {
-      url: process.env.DATABASE_URL,
-      pool: {
-        min: 2,
-        max: 10
-      }
+      url: process.env.DATABASE_URL
     }
   }
-})
+});
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma
+// Export both prisma and db for backward compatibility
+export { prisma };
+export const db = prisma;
+
+// Cache configuration
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+const cache = new Map<string, { data: any; timestamp: number }>();
 
 // Cache for frequently accessed data
-const cache = new Map()
-const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
-
 export async function getCachedData<T>(
   key: string,
   fetchFn: () => Promise<T>
