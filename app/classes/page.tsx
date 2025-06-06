@@ -41,11 +41,11 @@ export default function ClassesPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (classId: string) => {
     if (!confirm("Are you sure you want to delete this class?")) return;
 
     try {
-      const response = await fetch(`/api/classes/${id}`, {
+      const response = await fetch(`/api/classes/${classId}`, {
         method: "DELETE",
       });
       if (!response.ok) throw new Error("Failed to delete class");
