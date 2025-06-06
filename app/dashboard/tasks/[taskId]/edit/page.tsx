@@ -46,8 +46,12 @@ export default async function EditTaskPage({ params }: EditTaskPageProps) {
       <div className="mx-auto max-w-2xl">
         <TaskForm
           classes={classes}
-          initialData={task}
+          initialData={{
+            ...task,
+            dueDate: task.dueDate.toISOString().split('T')[0]
+          }}
           taskId={task.id}
+          onClose={() => window.history.back()}
         />
       </div>
     </div>
