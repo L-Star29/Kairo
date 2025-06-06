@@ -47,7 +47,7 @@ interface TaskFormProps {
   initialData?: {
     id: string;
     title: string;
-    description?: string;
+    description?: string | null;
     classId: string;
     dueDate: string;
     priority: number;
