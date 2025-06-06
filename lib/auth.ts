@@ -1,30 +1,22 @@
-import { PrismaAdapter } from "@auth/prisma-adapter"
 import { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import EmailProvider from "next-auth/providers/email"
-import { db } from "@/lib/db"
+import { PrismaAdapter } from "@auth/prisma-adapter"
+import { prisma } from "@/lib/prisma"
 import nodemailer from "nodemailer"
 import { createTransport } from "nodemailer"
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(db),
-  session: {
-    strategy: "jwt",
-  },
-  pages: {
-    signIn: "/auth/signin",
-    signUp: "/auth/signup",
-    error: "/auth/error",
-  },
+  adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
     }),
     EmailProvider({
       server: {
-        host: "smtp.gmail.com",
-        port: 587,
+        host: process.env.EMAIL_SERVER_HOST,
+        port: Number(process.env.EMAIL_SERVER_PORT) || 587,
         auth: {
           user: process.env.EMAIL_SERVER_USER,
           pass: process.env.EMAIL_SERVER_PASSWORD,
@@ -56,16 +48,25 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
+  pages: {
+    signIn: "/auth/signin",
+    signOut: "/auth/signout",
+    error: "/auth/error",
+    verifyRequest: "/auth/verify-request",
+  },
+  session: {
+    strategy: "jwt",
+  },
   callbacks: {
     async signIn({ user, account, profile, email, credentials }) {
       if (account?.provider === "google") {
         try {
-          const existingUser = await db.user.findUnique({
+          const existingUser = await prisma.user.findUnique({
             where: { email: user.email! },
           })
 
           if (!existingUser) {
-            await db.user.create({
+            await prisma.user.create({
               data: {
                 email: user.email!,
                 name: user.name,
@@ -82,12 +83,12 @@ export const authOptions: NextAuthOptions = {
 
       if (account?.provider === "email") {
         try {
-          const existingUser = await db.user.findUnique({
+          const existingUser = await prisma.user.findUnique({
             where: { email: user.email! },
           })
 
           if (!existingUser) {
-            await db.user.create({
+            await prisma.user.create({
               data: {
                 email: user.email!,
                 name: user.name,
@@ -103,17 +104,14 @@ export const authOptions: NextAuthOptions = {
 
       return true
     },
-    async session({ token, session }) {
-      if (token) {
-        session.user.id = token.id as string
-        session.user.name = token.name
-        session.user.email = token.email
-        session.user.image = token.picture
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.sub!
       }
       return session
     },
     async jwt({ token, user }) {
-      const dbUser = await db.user.findFirst({
+      const dbUser = await prisma.user.findFirst({
         where: {
           email: token.email,
         },
@@ -136,5 +134,4 @@ export const authOptions: NextAuthOptions = {
   },
   debug: process.env.NODE_ENV === "development",
   secret: process.env.NEXTAUTH_SECRET,
-  basePath: process.env.NEXTAUTH_URL || "http://localhost:3001",
 } 
