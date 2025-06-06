@@ -27,7 +27,7 @@ export default async function NewTaskPage() {
       </div>
 
       <div className="mx-auto max-w-2xl">
-        <TaskForm classes={classes} />
+        <TaskForm classes={classes} onClose={() => window.history.back()} />
       </div>
     </div>
   )

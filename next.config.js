@@ -2,12 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  output: 'export',  // Enable static exports
   images: {
-    unoptimized: true,  // Required for static export
+    unoptimized: true,
   },
-  basePath: '/Kairo',  // Your repository name
-  assetPrefix: '/Kairo/',  // Your repository name
 }
 
 module.exports = nextConfig 
